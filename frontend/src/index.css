@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-green: #0d5c2e;
+  --color-brand-green-light: #1a7a3f;
+  --color-brand-red: #c41e1e;
+  --color-brand-blue: #1a3f8f;
+  --color-brand-blue-light: #2451b3;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+#root {
+  width: 100%;
+  text-align: left;
+}
