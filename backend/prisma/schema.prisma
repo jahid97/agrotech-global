@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -21,7 +21,7 @@ model Lead {
   name      String
   email     String
   phone     String?
-  message   String   @db.Text
+  message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 }
@@ -29,7 +29,7 @@ model Lead {
 model SiteContent {
   id        String   @id @default(cuid())
   key       String   @unique
-  value     String   @db.LongText
+  value     String
   updatedAt DateTime @updatedAt
 }
 
@@ -38,8 +38,61 @@ model Testimonial {
   name      String
   role      String?
   company   String?
-  message   String   @db.Text
+  message   String
   rating    Int      @default(5)
   isVisible Boolean  @default(true)
   createdAt DateTime @default(now())
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  referrer  String?
+  userAgent String?
+  ip        String?
+  sessionId String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+  @@index([sessionId])
+}
+
+model Partner {
+  id        String   @id @default(cuid())
+  name      String
+  website   String?
+  logoUrl   String?
+  initial   String   @default("")
+  bgColor   String   @default("#0d5c2e")
+  position  Int      @default(0)
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model MapLocation {
+  id        String   @id @default(cuid())
+  name      String
+  longitude Float
+  latitude  Float
+  color     String   @default("#f59e0b")
+  tooltip   String   @default("")
+  isVisible Boolean  @default(true)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id        String   @id @default(cuid())
+  title     String
+  tagline   String
+  desc      String
+  benefits  String   // JSON-encoded string[]
+  tag       String   @default("")
+  theme     String   @default("green")
+  iconName  String   @default("FlaskConical")
+  position  Int      @default(0)
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

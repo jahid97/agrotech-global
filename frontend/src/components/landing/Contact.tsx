@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { slideLeft, slideRight, fadeUp } from '../../lib/animations'
+import { apiBase } from '../../lib/api'
 import { MapPin, Phone, Mail, Send } from 'lucide-react'
 
 export default function Contact() {
@@ -13,7 +14,7 @@ export default function Contact() {
     e.preventDefault()
     setStatus('loading')
     try {
-      const res = await fetch('/api/leads', {
+      const res = await fetch(`${apiBase}/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),

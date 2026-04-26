@@ -12,7 +12,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0faf4] via-white to-[#eef2ff]"
+      className="relative min-h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0faf4] via-white to-[#eef2ff] pt-20 pb-10"
     >
       {/* Animated background orbs */}
       <motion.div

@@ -16,7 +16,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <img src="/logo.png" alt="Logo" className="h-12 w-auto brightness-0 invert opacity-80" />
+              <img src="/logo.png" alt="Logo" className="h-16 md:h-20 w-auto object-contain brightness-0 invert opacity-80" />
             </div>
             <h3 className="text-white font-bold text-lg leading-tight mb-1">
               Agrotech Global BD Nutrition

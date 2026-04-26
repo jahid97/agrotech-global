@@ -1,116 +1,167 @@
 import { useRef, useMemo, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Stars, useTexture } from '@react-three/drei'
+import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 
-/* ─── Generate a simple cloud texture on a canvas (no CDN) ──── */
-function makeCloudTexture(): THREE.CanvasTexture {
-  const size = 1024
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size / 2
-  const ctx = canvas.getContext('2d')!
+/* ──────────────────────────────────────────────────────────────
+   Cartoon-style texture pipeline
+   1. Load the real NASA earth.jpg (Real map, NO AI text/lines)
+   2. Posterize every pixel → bright cyan ocean / solid green land
+   3. Detect every coastline pixel
+   4. Dilate coastlines thinly → flat hand-drawn outline
+   ────────────────────────────────────────────────────────────── */
+function makeCartoonEarth(source: CanvasImageSource): THREE.CanvasTexture {
+  const W = 2048, H = 1024
+  const cv = document.createElement('canvas')
+  cv.width = W; cv.height = H
+  const ctx = cv.getContext('2d')!
+  ctx.drawImage(source, 0, 0, W, H)
 
-  ctx.fillStyle = 'transparent'
-  ctx.clearRect(0, 0, size, size / 2)
+  const N   = W * H
+  const raw = ctx.getImageData(0, 0, W, H).data
+  const out = new Uint8ClampedArray(raw.length)
 
-  const rand = (min: number, max: number) => Math.random() * (max - min) + min
-  for (let i = 0; i < 180; i++) {
-    const x = rand(0, size)
-    const y = rand(0, size / 2)
-    const r = rand(18, 70)
-    const alpha = rand(0.08, 0.22)
-    const grad = ctx.createRadialGradient(x, y, 0, x, y, r)
-    grad.addColorStop(0, `rgba(255,255,255,${alpha})`)
-    grad.addColorStop(1, 'rgba(255,255,255,0)')
-    ctx.fillStyle = grad
-    ctx.beginPath()
-    ctx.ellipse(x, y, r, r * 0.55, rand(0, Math.PI), 0, Math.PI * 2)
-    ctx.fill()
+  // Pass 1: solid flat colors (No gradients, exactly like the reference image)
+  const isOceanMap = new Uint8Array(N)
+  for (let i = 0; i < N; i++) {
+    const r = raw[i * 4], g = raw[i * 4 + 1], b = raw[i * 4 + 2]
+
+    // Determine if pixel is ocean based on blue dominance
+    const blueWins = b > r * 1.05 && b > 40
+    // Remove ice/snow to keep it perfectly flat green/blue
+    const isSnow   = r > 165 && g > 165 && b > 165
+    const ocean    = blueWins && !isSnow
+
+    if (ocean) {
+      isOceanMap[i] = 1
+      // Cyan/Light Blue ocean
+      out[i * 4]     = 42
+      out[i * 4 + 1] = 207
+      out[i * 4 + 2] = 207
+      out[i * 4 + 3] = 255
+    } else {
+      // Solid bright green land
+      out[i * 4]     = 110
+      out[i * 4 + 1] = 191
+      out[i * 4 + 2] = 40
+      out[i * 4 + 3] = 255
+    }
   }
 
-  const tex = new THREE.CanvasTexture(canvas)
+  // Pass 2: find coastline boundary pixels
+  const bound = new Uint8Array(N)
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1; x < W - 1; x++) {
+      const i = y * W + x
+      const me = isOceanMap[i]
+      if (
+        isOceanMap[i - W] !== me || isOceanMap[i + W] !== me ||
+        isOceanMap[i - 1] !== me || isOceanMap[i + 1] !== me
+      ) {
+        bound[i] = 1
+      }
+    }
+  }
+
+  // Pass 3: dilate coastline (Only 1 time for a THIN continuous outline)
+  let cur = bound
+  let nxt = new Uint8Array(N)
+  for (let iter = 0; iter < 1; iter++) {
+    for (let y = 1; y < H - 1; y++) {
+      for (let x = 1; x < W - 1; x++) {
+        const i = y * W + x
+        nxt[i] = (cur[i] || cur[i - 1] || cur[i + 1] || cur[i - W] || cur[i + W]) ? 1 : 0
+      }
+    }
+    const temp = cur; cur = nxt; nxt = temp;
+  }
+
+  // Pass 4: paint the thin outline black
+  for (let i = 0; i < N; i++) {
+    if (cur[i]) {
+      out[i * 4]     = 0   // black outline
+      out[i * 4 + 1] = 0
+      out[i * 4 + 2] = 0
+      out[i * 4 + 3] = 255
+    }
+  }
+
+  ctx.putImageData(new ImageData(out, W, H), 0, 0)
+  const tex = new THREE.CanvasTexture(cv)
   tex.colorSpace = THREE.SRGBColorSpace
   return tex
 }
 
-/* ─── Earth + clouds mesh ────────────────────────────────────── */
+/* ── Thin cloud layer (kept subtle just in case you want it) ── */
+function makeCloudTexture(): THREE.CanvasTexture {
+  const W = 1024, H = 512
+  const cv = document.createElement('canvas')
+  cv.width = W; cv.height = H
+  const ctx = cv.getContext('2d')!
+  ctx.clearRect(0, 0, W, H)
+  const rand = (a: number, b: number) => Math.random() * (b - a) + a
+  for (let i = 0; i < 50; i++) {
+    const x = rand(0, W), y = rand(0, H), r = rand(10, 30)
+    ctx.fillStyle = `rgba(255,255,255,${rand(0.02, 0.06)})`
+    ctx.beginPath()
+    ctx.ellipse(x, y, r, r * 0.5, rand(0, Math.PI), 0, Math.PI * 2)
+    ctx.fill()
+  }
+  const tex = new THREE.CanvasTexture(cv)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
 function EarthMesh() {
-  const earthRef = useRef<THREE.Mesh>(null!)
-  const cloudsRef = useRef<THREE.Mesh>(null!)
+  const earthRef  = useRef<THREE.Mesh>(null!)
 
-  // useTexture suspends until the texture is fully loaded — reliable in R3F
-  const earthTex = useTexture('/earth.jpg')
-  earthTex.colorSpace = THREE.SRGBColorSpace
-
+  // We load the REAL NASA map, but process it instantly in canvas!
+  // This guarantees perfect continent shapes with ZERO AI text/lines.
+  const rawTex = useTexture('/earth.jpg')
+  const earthTex = useMemo(() => makeCartoonEarth(rawTex.image as CanvasImageSource), [rawTex])
   const cloudsTex = useMemo(() => makeCloudTexture(), [])
 
   useFrame(() => {
-    if (earthRef.current) earthRef.current.rotation.y += 0.0010
-    if (cloudsRef.current) cloudsRef.current.rotation.y += 0.0013
+    if (earthRef.current) earthRef.current.rotation.y += 0.001
   })
 
   return (
     <>
-      {/* Earth sphere — standard material enables day/night shading */}
+      <mesh>
+        {/* Outer spherical black line, slightly larger, rendered on the inside */}
+        <sphereGeometry args={[1.615, 64, 64]} />
+        <meshBasicMaterial color="#000000" side={THREE.BackSide} />
+      </mesh>
+
       <mesh ref={earthRef}>
         <sphereGeometry args={[1.6, 64, 64]} />
-        <meshStandardMaterial
-          map={earthTex}
-          roughness={0.85}
-          metalness={0}
-        />
+        <meshBasicMaterial map={earthTex} />
       </mesh>
 
-      {/* Procedural cloud layer */}
-      <mesh ref={cloudsRef}>
-        <sphereGeometry args={[1.635, 64, 64]} />
-        <meshStandardMaterial
+      {/* Very faint clouds */}
+      <mesh>
+        <sphereGeometry args={[1.63, 64, 64]} />
+        <meshBasicMaterial
           map={cloudsTex}
           transparent
-          opacity={0.35}
+          opacity={0.3}
           depthWrite={false}
-          roughness={1}
-          metalness={0}
-        />
-      </mesh>
-
-      {/* Atmosphere rim — brand green to match site theme */}
-      <mesh>
-        <sphereGeometry args={[1.75, 64, 64]} />
-        <meshStandardMaterial
-          color="#0d5c2e"
-          transparent
-          opacity={0.18}
-          side={THREE.BackSide}
-        />
-      </mesh>
-
-      {/* Outer glow halo */}
-      <mesh>
-        <sphereGeometry args={[1.88, 64, 64]} />
-        <meshStandardMaterial
-          color="#1a7a3f"
-          transparent
-          opacity={0.06}
-          side={THREE.BackSide}
+          blending={THREE.AdditiveBlending}
         />
       </mesh>
     </>
   )
 }
 
-/* ─── Fallback sphere while texture loads ────────────────────── */
 function EarthFallback() {
   return (
     <mesh>
       <sphereGeometry args={[1.6, 64, 64]} />
-      <meshBasicMaterial color="#1b5e8a" />
+      <meshBasicMaterial color="#2acfa1" />
     </mesh>
   )
 }
 
-/* ─── Canvas ─────────────────────────────────────────────────── */
 export default function Earth3D() {
   return (
     <Canvas
@@ -118,16 +169,6 @@ export default function Earth3D() {
       style={{ background: 'transparent' }}
       gl={{ alpha: true, antialias: true }}
     >
-      {/* Ambient — dim so night side is noticeably dark */}
-      <ambientLight intensity={0.12} />
-      {/* Sun — right-side key light, warm white, creates the lit day side */}
-      <directionalLight position={[6, 2, 4]} intensity={1.8} color="#fff5e0" />
-      {/* Soft green shadow on the left/night side */}
-      <pointLight position={[-5, 0, 2]} intensity={0.28} color="#3ddc70" />
-      {/* Top rim for depth */}
-      <pointLight position={[0, 5, 2]} intensity={0.2} color="#a8e6c1" />
-      <Stars radius={140} depth={60} count={4000} factor={4} saturation={0} fade speed={0.3} />
-      {/* Shift Earth right so it sits behind the right half, leaving the left for text */}
       <group position={[0.6, 0.1, 0]}>
         <Suspense fallback={<EarthFallback />}>
           <EarthMesh />

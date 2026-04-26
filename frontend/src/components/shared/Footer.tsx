@@ -9,7 +9,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-5">
-              <img src="/logo.png" alt="Logo" className="h-12 w-auto brightness-0 invert opacity-70" />
+              <img src="/logo.png" alt="Logo" className="h-16 md:h-20 w-auto object-contain brightness-0 invert opacity-70" />
               <div>
                 <div className="text-white font-bold text-sm leading-tight">Agrotech Global BD</div>
                 <div className="text-green-500 text-xs font-semibold">Nutrition</div>

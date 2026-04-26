@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { MapPin, Phone, Mail, Send, Clock } from 'lucide-react'
+import { MapPin, Phone, Mail, Send, Clock, Handshake, CheckCircle2 } from 'lucide-react'
 import { fadeUp, slideLeft, slideRight } from '../lib/animations'
+import { useContent } from '../contexts/SiteContent'
+import { apiBase } from '../lib/api'
 
 function PageHero() {
   return (
@@ -22,36 +24,18 @@ function PageHero() {
   )
 }
 
-const contactInfo = [
-  {
-    icon: <MapPin size={20} />,
-    label: 'Head Office',
-    value: 'Holding-28, Road-16, Flat-B-1, Rupnagar, Mirpur, Dhaka-1216, Bangladesh',
-    color: 'bg-green-100 text-[#0d5c2e]',
-  },
-  {
-    icon: <Phone size={20} />,
-    label: 'Phone',
-    value: '+88 01752-827682',
-    href: 'tel:+8801752827682',
-    color: 'bg-blue-100 text-[#1a3f8f]',
-  },
-  {
-    icon: <Mail size={20} />,
-    label: 'Email',
-    value: 'drjasim1979@gmail.com',
-    href: 'mailto:drjasim1979@gmail.com',
-    color: 'bg-red-100 text-[#c41e1e]',
-  },
-  {
-    icon: <Clock size={20} />,
-    label: 'Business Hours',
-    value: 'Sunday – Thursday: 9:00 AM – 6:00 PM',
-    color: 'bg-amber-100 text-amber-700',
-  },
-]
-
 function ContactSection() {
+  const address = useContent('contact.address', 'Holding-28, Road-16, Flat-B-1, Rupnagar, Mirpur, Dhaka-1216, Bangladesh')
+  const phone   = useContent('contact.phone',   '+88 01752-827682')
+  const email   = useContent('contact.email',   'drjasim1979@gmail.com')
+  const hours   = useContent('contact.hours',   'Sunday – Thursday: 9:00 AM – 6:00 PM')
+
+  const contactInfo = [
+    { icon: <MapPin size={20} />,  label: 'Head Office',     value: address, color: 'bg-green-100 text-[#0d5c2e]' },
+    { icon: <Phone size={20} />,   label: 'Phone',           value: phone,   href: `tel:${phone.replace(/[\s-]/g, '')}`, color: 'bg-blue-100 text-[#1a3f8f]' },
+    { icon: <Mail size={20} />,    label: 'Email',           value: email,   href: `mailto:${email}`, color: 'bg-red-100 text-[#c41e1e]' },
+    { icon: <Clock size={20} />,   label: 'Business Hours',  value: hours,   color: 'bg-amber-100 text-amber-700' },
+  ]
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-60px' })
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' })
@@ -61,7 +45,7 @@ function ContactSection() {
     e.preventDefault()
     setStatus('loading')
     try {
-      const res = await fetch('/api/leads', {
+      const res = await fetch(`${apiBase}/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, message: `[${form.subject}] ${form.message}` }),
@@ -101,13 +85,18 @@ function ContactSection() {
               </div>
             ))}
 
-            {/* Map placeholder */}
-            <div className="mt-4 bg-gray-100 rounded-2xl h-44 flex items-center justify-center border border-gray-200">
-              <div className="text-center text-gray-400">
-                <MapPin size={28} className="mx-auto mb-2" />
-                <p className="text-sm font-medium">Mirpur, Dhaka-1216</p>
-                <p className="text-xs mt-0.5">Bangladesh</p>
-              </div>
+            {/* Google Map */}
+            <div className="mt-4 rounded-2xl overflow-hidden border border-gray-200 h-52">
+              <iframe
+                src="https://maps.google.com/maps?q=Rupnagar+Mirpur+Dhaka+1216+Bangladesh&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Agrotech Global BD Nutrition location"
+              />
             </div>
           </motion.div>
 
@@ -116,7 +105,9 @@ function ContactSection() {
             <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100">
               {status === 'success' ? (
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-16">
-                  <div className="text-6xl mb-4">✅</div>
+                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 size={32} className="text-[#0d5c2e]" />
+                </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Message Received!</h3>
                   <p className="text-gray-500">Our team will get back to you within 24 hours.</p>
                   <button onClick={() => setStatus('idle')} className="mt-6 text-[#0d5c2e] font-semibold text-sm hover:underline">
@@ -189,7 +180,9 @@ function PartnerCTA() {
     <section ref={ref} className="py-16 bg-gray-950">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <motion.div variants={fadeUp} initial="hidden" animate={inView ? 'visible' : 'hidden'} className="bg-[#0d5c2e]/20 border border-[#0d5c2e]/30 rounded-3xl p-10 text-center">
-          <div className="text-3xl mb-3">🤝</div>
+          <div className="w-12 h-12 rounded-xl bg-[#0d5c2e]/20 flex items-center justify-center mx-auto mb-3">
+            <Handshake size={22} className="text-green-400" />
+          </div>
           <h3 className="text-2xl font-bold text-white mb-3">Interested in becoming a distributor?</h3>
           <p className="text-gray-400 max-w-lg mx-auto mb-6 text-sm">
             We are expanding our distribution network across Bangladesh. If you are interested in partnering with us to supply premium animal nutrition products in your region, we'd love to talk.

@@ -44,7 +44,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-20">
           {/* Logo */}
           <a href="#home" className="flex items-center gap-3">
-            <img src="/logo.png" alt="Agrotech Global BD Nutrition" className="h-14 w-auto" />
+            <img src="/logo.png" alt="Agrotech Global BD Nutrition" className="h-[64px] md:h-[76px] w-auto object-contain" />
             <div className="hidden lg:block">
               <div className="text-[#0d5c2e] font-bold text-base leading-tight">Agrotech Global BD</div>
               <div className="text-[#c41e1e] font-semibold text-sm">Nutrition</div>
