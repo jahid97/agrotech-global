@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
+import bcrypt from 'bcryptjs'
+import { db } from './lib/db'
 import authRoutes from './routes/auth.routes'
 import leadsRoutes from './routes/leads.routes'
 import adminRoutes from './routes/admin.routes'
@@ -47,6 +49,18 @@ app.get('/api', (_req, res) => {
   res.json({ message: 'AgroTech API is running', version: '1.0.0' })
 })
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`)
+
+  // Create admin account from env vars if none exists
+  const email    = process.env.ADMIN_EMAIL
+  const password = process.env.ADMIN_PASSWORD
+  if (email && password) {
+    const existing = await db.admin.findUnique({ where: { email } })
+    if (!existing) {
+      const hashed = await bcrypt.hash(password, 10)
+      await db.admin.create({ data: { email, password: hashed } })
+      console.log(`Admin account created: ${email}`)
+    }
+  }
 })
