@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
 import { ArrowUpRight, ArrowRight, CheckCircle, FlaskConical, Leaf, TrendingUp, Users, ShieldCheck, Microscope, Sprout, Fish, Wheat, Activity } from 'lucide-react'
 import { fadeUp, staggerContainer, scaleIn, slideLeft, slideRight } from '../lib/animations'
 import { useContent } from '../contexts/SiteContent'
@@ -8,13 +8,8 @@ import { apiBase } from '../lib/api'
 
 /* ─── Flip Column ───────────────────────────────────────────── */
 
-function FadeColumn({ photos, delay }: { photos: string[]; delay: number }) {
+function FadeColumn({ photos, delay, priority }: { photos: string[]; delay: number; priority?: boolean }) {
   const [idx, setIdx] = useState(0)
-
-  // Preload all images so transitions are instant
-  useEffect(() => {
-    photos.forEach(src => { const img = new Image(); img.src = src })
-  }, [photos])
 
   useEffect(() => {
     const start = setTimeout(() => {
@@ -28,18 +23,19 @@ function FadeColumn({ photos, delay }: { photos: string[]; delay: number }) {
 
   return (
     <div className="relative flex-1 overflow-hidden">
-      <AnimatePresence>
-        <motion.img
-          key={idx}
-          src={photos[idx]}
+      {/* Keep all images mounted so browser caches them — only opacity changes */}
+      {photos.map((src, i) => (
+        <img
+          key={src}
+          src={src}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.8, ease: 'easeInOut' }}
+          fetchPriority={priority && i === 0 ? 'high' : 'low'}
+          loading={priority && i === 0 ? 'eager' : 'lazy'}
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1800ms] ease-in-out"
+          style={{ opacity: i === idx ? 1 : 0 }}
         />
-      </AnimatePresence>
+      ))}
     </div>
   )
 }
@@ -80,7 +76,7 @@ function Hero() {
         {/* ── 3-column flipping photo grid ── */}
         <div className="absolute inset-0 z-0 flex">
           {columnPhotos.map((photos, i) => (
-            <FadeColumn key={i} photos={photos} delay={i * 7000} />
+            <FadeColumn key={i} photos={photos} delay={i * 7000} priority={i === 0} />
           ))}
         </div>
 
