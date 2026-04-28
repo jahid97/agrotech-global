@@ -14,11 +14,11 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react':  ['react', 'react-dom', 'react-router-dom'],
-          'vendor-three':  ['three', '@react-three/fiber', '@react-three/drei'],
-          'vendor-motion': ['framer-motion'],
-          'vendor-map':    ['d3-geo', 'topojson-client'],
+        manualChunks(id) {
+          if (id.includes('three') || id.includes('@react-three')) return 'vendor-three'
+          if (id.includes('framer-motion'))                         return 'vendor-motion'
+          if (id.includes('d3-geo') || id.includes('topojson'))    return 'vendor-map'
+          if (id.includes('node_modules'))                         return 'vendor'
         },
       },
     },
