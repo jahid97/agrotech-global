@@ -14,11 +14,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks(id) {
+        manualChunks(id: string): string | undefined {
           if (id.includes('three') || id.includes('@react-three')) return 'vendor-three'
           if (id.includes('framer-motion'))                         return 'vendor-motion'
           if (id.includes('d3-geo') || id.includes('topojson'))    return 'vendor-map'
           if (id.includes('node_modules'))                         return 'vendor'
+          return undefined
         },
       },
     },
