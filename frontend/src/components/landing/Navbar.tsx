@@ -41,10 +41,10 @@ export default function Navbar() {
           scrolled ? 'bg-white shadow-lg' : 'bg-white/95 backdrop-blur-md'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-[96px]">
           {/* Logo */}
-          <a href="#home" className="flex items-center gap-3">
-            <img src="/logo.png" alt="Agrotech Global BD Nutrition" className="h-[64px] md:h-[76px] w-auto object-contain" />
+          <a href="#home" className="self-stretch flex items-center gap-3 flex-shrink-0 py-1">
+            <img src="/Agrotech%20logo.svg" alt="Agrotech Global BD Nutrition" className="h-full w-auto object-contain" />
             <div className="hidden lg:block">
               <div className="text-[#0d5c2e] font-bold text-base leading-tight">Agrotech Global BD</div>
               <div className="text-[#c41e1e] font-semibold text-sm">Nutrition</div>

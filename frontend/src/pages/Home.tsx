@@ -9,12 +9,17 @@ import { apiBase } from '../lib/api'
 /* ─── Flip Column ───────────────────────────────────────────── */
 
 function FadeColumn({ photos, delay, priority }: { photos: string[]; delay: number; priority?: boolean }) {
-  const [idx, setIdx] = useState(0)
+  const [idx, setIdx]       = useState(0)
+  const [loaded, setLoaded] = useState(() => new Set([0])) // only first image on mount
 
   useEffect(() => {
     const start = setTimeout(() => {
       const interval = setInterval(() => {
-        setIdx(prev => (prev + 1) % photos.length)
+        setIdx(prev => {
+          const next = (prev + 1) % photos.length
+          setLoaded(s => new Set([...s, next])) // preload next just before showing
+          return next
+        })
       }, 20000)
       return () => clearInterval(interval)
     }, delay)
@@ -23,19 +28,21 @@ function FadeColumn({ photos, delay, priority }: { photos: string[]; delay: numb
 
   return (
     <div className="relative flex-1 overflow-hidden">
-      {/* Keep all images mounted so browser caches them — only opacity changes */}
-      {photos.map((src, i) => (
-        <img
-          key={src}
-          src={src}
-          alt=""
-          fetchPriority={priority && i === 0 ? 'high' : 'low'}
-          loading={priority && i === 0 ? 'eager' : 'lazy'}
-          decoding="async"
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1800ms] ease-in-out"
-          style={{ opacity: i === idx ? 1 : 0 }}
-        />
-      ))}
+      {photos.map((src, i) => {
+        if (!loaded.has(i)) return null
+        return (
+          <img
+            key={src}
+            src={src}
+            alt=""
+            fetchPriority={priority && i === 0 ? 'high' : 'low'}
+            loading={priority && i === 0 ? 'eager' : 'lazy'}
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1800ms] ease-in-out"
+            style={{ opacity: i === idx ? 1 : 0 }}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -187,13 +194,12 @@ function FocusSection() {
     const t = setInterval(() => {
       setStep(prev => {
         if (prev === 3) {
-          // snap dot back to start without animation, then re-enable
           setInstant(true)
-          setTimeout(() => setInstant(false), 80)
+          setTimeout(() => setInstant(false), 150)
         }
         return (prev + 1) % 4
       })
-    }, 1800)
+    }, 2200)
     return () => clearInterval(t)
   }, [inView])
 
@@ -208,8 +214,8 @@ function FocusSection() {
   // In a 4-col equal grid each col is 25% wide → centers at 12.5%, 37.5%, 62.5%, 87.5%.
   // Track: left=12.5%, right=12.5% → dot stops at 0%, 33.33%, 66.67%, 100% of track width.
   const DOT_STOPS = [0, 33.33, 66.67, 100]
-  const ease      = 'easeInOut' as const
-  const tx        = instant ? { duration: 0 } : { duration: 0.55, ease }
+  const ease      = [0.4, 0, 0.2, 1] as const
+  const tx        = instant ? { duration: 0 } : { duration: 0.7, ease }
 
   return (
     <section ref={ref} className="py-20 bg-white border-b border-gray-100">
@@ -244,6 +250,7 @@ function FocusSection() {
               className="absolute left-0 top-0 h-full rounded-full bg-[#0d5c2e] origin-left"
               animate={{ scaleX: DOT_STOPS[step] / 100 }}
               transition={tx}
+              style={{ willChange: 'transform' }}
             />
 
             {/* Moving dot */}
@@ -251,7 +258,7 @@ function FocusSection() {
               className="absolute w-[18px] h-[18px] rounded-full bg-[#0d5c2e] ring-[3px] ring-white shadow-[0_0_0_4px_rgba(13,92,46,0.18)]"
               animate={{ left: `${DOT_STOPS[step]}%` }}
               transition={tx}
-              style={{ top: '50%', marginTop: '-9px', marginLeft: '-9px' }}
+              style={{ top: '50%', marginTop: '-9px', marginLeft: '-9px', willChange: 'left' }}
             />
           </div>
 
@@ -269,7 +276,7 @@ function FocusSection() {
                 <motion.div key={i} variants={scaleIn} className="flex flex-col items-center text-center">
                   <div
                     className={[
-                      'relative z-10 w-16 h-16 rounded-full border-2 flex items-center justify-center font-bold text-lg mb-4 transition-all duration-500',
+                      'relative z-10 w-16 h-16 rounded-full border-2 flex items-center justify-center font-bold text-lg mb-4 transition-[color,background-color,border-color,box-shadow] duration-500',
                       isActive    ? 'bg-[#0d5c2e] border-[#0d5c2e] text-white shadow-[0_0_0_6px_rgba(13,92,46,0.12)]' :
                       isCompleted ? 'bg-green-50 border-[#0d5c2e] text-[#0d5c2e]' :
                                     'bg-white border-gray-200 text-gray-400',

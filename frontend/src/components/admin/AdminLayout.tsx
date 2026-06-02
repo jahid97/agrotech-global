@@ -30,7 +30,7 @@ export default function AdminLayout() {
     <aside className="flex flex-col h-full bg-white border-r border-gray-200 w-64">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-gray-100">
-        <img src="/logo.png" alt="Agrotech" className="h-9 w-auto" />
+        <img src="/Agrotech%20logo.svg" alt="Agrotech" className="h-16 w-auto" />
         <div className="leading-tight">
           <div className="text-xs font-bold text-gray-900">Agrotech Global</div>
           <div className="text-[10px] text-[#0d5c2e] font-semibold uppercase tracking-widest">Admin</div>

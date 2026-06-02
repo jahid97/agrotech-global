@@ -31,14 +31,14 @@ export default function Navbar() {
           : 'bg-white border-b border-gray-100'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 h-[68px] flex items-center relative">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 h-[88px] flex items-center relative">
 
         {/* ── Logo ── */}
-        <Link to="/" className="flex-shrink-0">
+        <Link to="/" className="self-stretch flex items-center flex-shrink-0 py-1">
           <img
-            src="/logo.png"
+            src="/Agrotech%20logo.svg"
             alt="Agrotech Global BD Nutrition"
-            className="h-[52px] w-auto object-contain"
+            className="h-full w-auto object-contain"
           />
         </Link>
 
